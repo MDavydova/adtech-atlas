@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function useAtlas() {
@@ -9,11 +9,14 @@ export default function useAtlas() {
 
   useEffect(() => {
     async function fetch() {
-      const cSnap = await getDocs(
-        query(collection(db, "clusters"), orderBy("num")),
-      );
+      const cSnap = await getDocs(collection(db, "clusters"));
       const tSnap = await getDocs(collection(db, "terms"));
-      setClusters(cSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      const clustersData = cSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => a.num.localeCompare(b.num));
+
+      setClusters(clustersData);
       setTerms(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }
