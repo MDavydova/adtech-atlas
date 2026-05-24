@@ -1,9 +1,11 @@
 import { useState } from "react";
 import useAtlas from "../hooks/useAtlas";
+import useAuth from "../hooks/useAuth";
 import TermPanel from "./TermPanel";
 
 export default function Atlas() {
   const { clusters, terms, loading } = useAtlas();
+  const { user, isOwner, login, logout } = useAuth();
   const [selected, setSelected] = useState(null);
 
   if (loading)
@@ -13,10 +15,18 @@ export default function Atlas() {
       </div>
     );
 
-  const selectedTerm = terms.find((t) => t.id === selected);
+  // Filter out Commercial Language for non-owners
+  const visibleClusters = isOwner
+    ? clusters
+    : clusters.filter((c) => c.id !== "commercial");
+  const visibleTerms = isOwner
+    ? terms
+    : terms.filter((t) => t.clusterId !== "commercial");
+
+  const selectedTerm = visibleTerms.find((t) => t.id === selected);
 
   function getTermsForCluster(clusterId) {
-    return terms.filter((t) => t.clusterId === clusterId);
+    return visibleTerms.filter((t) => t.clusterId === clusterId);
   }
 
   function isRelated(termId) {
@@ -41,7 +51,25 @@ export default function Atlas() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-7 pt-12 pb-36">
-      {/* Header */}
+      {/* Auth button - subtle, top right */}
+      <div className="absolute top-6 right-7 text-xs">
+        {user ? (
+          <button
+            onClick={logout}
+            className="text-[#a8978a] hover:text-[#a87c28] tracking-wide"
+          >
+            sign out
+          </button>
+        ) : (
+          <button
+            onClick={login}
+            className="text-[#a8978a] hover:text-[#a87c28] tracking-wide"
+          >
+            sign in
+          </button>
+        )}
+      </div>
+
       <header className="mb-12 pb-9 border-b border-[#e2d8cc]">
         <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#a87c28] mb-5">
           A Personal AdTech Atlas
@@ -64,23 +92,26 @@ export default function Atlas() {
             <span className="w-2.5 h-2.5 rounded-full border-2 border-[#a87c28] inline-block"></span>
             Related terms
           </span>
-          <span className="text-[#a87c28] font-semibold">
-            {clusters.length}
-          </span>{" "}
-          clusters
-          <span className="text-[#a87c28] font-semibold">
-            {terms.length}
-          </span>{" "}
-          terms
+          <span>
+            <span className="text-[#a87c28] font-semibold">
+              {visibleClusters.length}
+            </span>{" "}
+            clusters
+          </span>
+          <span>
+            <span className="text-[#a87c28] font-semibold">
+              {visibleTerms.length}
+            </span>{" "}
+            terms
+          </span>
         </div>
       </header>
 
-      {/* Grid */}
       <div
         className="grid gap-5"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))" }}
       >
-        {clusters.map((cluster) => (
+        {visibleClusters.map((cluster) => (
           <div
             key={cluster.id}
             className="bg-white border border-[#e2d8cc] rounded-lg p-7 relative shadow-sm"
@@ -112,10 +143,9 @@ export default function Atlas() {
         ))}
       </div>
 
-      {/* Panel */}
       <TermPanel
         term={selectedTerm}
-        allTerms={terms}
+        allTerms={visibleTerms}
         onSelect={setSelected}
         onClose={() => setSelected(null)}
       />
