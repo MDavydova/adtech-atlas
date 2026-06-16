@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import {
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
 } from "firebase/auth";
@@ -14,6 +15,11 @@ export default function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result on page load
+    getRedirectResult(auth).catch((err) => {
+      console.error("Redirect error:", err);
+    });
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
@@ -21,9 +27,9 @@ export default function useAuth() {
     return unsub;
   }, []);
 
-  const login = async () => {
+  const login = () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    signInWithRedirect(auth, provider);
   };
 
   const logout = () => signOut(auth);
