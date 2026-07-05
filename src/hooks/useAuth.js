@@ -15,25 +15,25 @@ export default function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result on page load
-    getRedirectResult(auth).catch((err) => {
-      console.error("Redirect error:", err);
-    });
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log("Signed in via redirect:", result.user.uid);
+        }
+      })
+      .catch((err) => console.error("Redirect error:", err));
 
     const unsub = onAuthStateChanged(auth, (u) => {
+      console.log("Auth state:", u?.uid ?? "not signed in");
       setUser(u);
       setLoading(false);
     });
+
     return unsub;
   }, []);
 
-  const login = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider);
-  };
-
+  const login = () => signInWithRedirect(auth, new GoogleAuthProvider());
   const logout = () => signOut(auth);
-
   const isOwner = user?.uid === OWNER_UID;
 
   return { user, isOwner, loading, login, logout };
